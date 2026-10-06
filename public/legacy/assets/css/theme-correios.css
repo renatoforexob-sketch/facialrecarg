@@ -1,0 +1,14 @@
+:root{
+  --bg-card:#FFFFFF;--bg-soft:#FFF8E0;
+  --primary:#003399;--primary-hover:#002266;--accent:#FFD100;--accent-soft:#FFF6D0;
+  --success:#003399;--success-soft:#E6EEFA;--success-border:#A8BAD8;
+  --error:#EF4444;
+  --text-primary:#002F87;--text-secondary:#3A5F9E;--text-muted:#7A93B3;--text-soft:#4F6B92;
+  --border:#F0E4B8;--border-strong:#E0CC7A;--border-focus:#003399;
+  --gold:#FFD100;
+  /* Correios: botão amarelo com texto azul (contraste AA) */
+  --btn-gold-from:#FFE000;--btn-gold-to:#FFC800;--btn-gold-from-hover:#FFE93A;--btn-gold-to-hover:#FFD426;
+  --btn-gold-text:#003399;--btn-gold-shadow:rgba(255,200,0,.35);--btn-gold-shadow-hover:rgba(255,200,0,.45);
+  --bg-page-from:#FFFDF5;--bg-page-mid:#FFF8E0;--bg-page-to:#FFF3C5;
+  --bg-main-from:#FFFCF0;--bg-main-to:#FFF3C5;
+}

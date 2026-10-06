@@ -1,0 +1,13 @@
+{
+  "rewrites": [
+    {
+      "source": "/((?!api/|assets/|legacy/).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 30
+    }
+  }
+}

@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="Pagamento PIX da solicitação pré-paga na Recarga Fácil.">
+  <title>Pagamento PIX — Recarga Fácil</title>
+  <link rel="icon" href="assets/images/favicon.ico" sizes="any">
+  <link rel="shortcut icon" href="assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    /* =============================================
+       RESET E VARIÁVEIS - Tema dinâmico por operadora
+       (os valores padrão são substituídos via JS)
+       ============================================= */
+    :root {
+      /* Padrão Recarga Fácil */
+      --primary: #102A72;
+      --primary-dark: #0A1F5C;
+      --accent: #126BFF;
+      --accent-dark: #0A1F5C;
+      --accent-soft: #E8F3FF;
+      --accent-border: #BEDAF4;
+      --accent-text: #102A72;
+      --accent-btn-from: #126BFF;
+      --accent-btn-to: #0A1F5C;
+      --accent-btn-hover: #0A1F5C;
+      --accent-btn-shadow: rgba(18,107,255,.28);
+
+      --bg: #FFFFFF;
+      --text-primary: #142A5C;
+      --text-secondary: #475569;
+      --text-muted: #64748B;
+      --border: #E2E8F0;
+      --error: #EF4444;
+      --warning: #F59E0B;
+
+      --font: 'Inter', sans-serif;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+    img { display:block; max-width:100%; object-fit:contain; }
+    a { text-decoration:none; color:inherit; }
+    button { border:none; cursor:pointer; font-family:var(--font); font-weight:500; }
+
+    /* =============================================
+       HEADER - SEM LOGO
+       ============================================= */
+    .header {
+      width: 100%;
+      height: 68px;
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+    .header-inner {
+      max-width: 1280px;
+      height: 68px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px;
+      flex-shrink: 0;
+      transition: border-color .25s ease;
+    }
+    .logo-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+    .logo-icon svg path {
+      fill: var(--accent);
+      transition: fill .25s ease;
+    }
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+    .logo-text strong {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: var(--text-primary);
+    }
+    .logo-text span {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* =============================================
+       CONTEÚDO PRINCIPAL
+       ============================================= */
+    .payment-main-shell {
+      background: #FFFFFF;
+      padding: 20px 14px 8px;
+    }
+    .payment-flow-container {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* ===== PROGRESSO ===== */
+    .step-progress-wrap {
+      width: 100%;
+      margin: 0 auto 12px;
+    }
+    .step-progress {
+      background: #FFFFFF;
+      border: 1px solid #EEF2F7;
+      border-radius: 16px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .progress-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+    .progress-item span {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-text);
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .25s ease, color .25s ease;
+    }
+    .progress-item.completed span { background: var(--accent); color: #fff; }
+    .progress-item.active span { background: var(--accent); color: #fff; }
+    .progress-item small {
+      font-size: 9px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .progress-line {
+      flex: 1;
+      height: 1.5px;
+      background: #E2E8F0;
+      margin: 0 4px;
+    }
+    .progress-line.completed { background: var(--accent); transition: background .25s ease; }
+
+    /* ===== ID DA SOLICITAÇÃO ===== */
+    .request-id-badge {
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 400;
+      letter-spacing: 0.2px;
+    }
+    .request-id-badge strong {
+      background: var(--accent-soft);
+      padding: 3px 10px;
+      border-radius: 30px;
+      color: var(--accent-text);
+      font-weight: 600;
+      font-size: 12px;
+      transition: background .25s ease, color .25s ease;
+    }
+
+    /* ===== RESUMO DO PEDIDO ===== */
+    .order-summary-box {
+      background: #F8FAFC;
+      border: 1px solid #E5EAF2;
+      border-radius: 14px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+    }
+    .order-summary-box .row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+    .order-summary-box .row:last-child { border-bottom: none; }
+    .order-summary-box .label {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+    .order-summary-box .value {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    /* ===== TÍTULOS ===== */
+    .payment-title-block {
+      text-align: center;
+      margin-bottom: 14px;
+    }
+    .payment-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--accent-text);
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      transition: color .25s ease;
+    }
+    .payment-pix-icon { width: 20px; height: 20px; }
+    .payment-title-block h1 {
+      font-size: 1.35rem;
+      line-height: 1.2;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: -0.3px;
+      transition: color .25s ease;
+    }
+    .payment-title-block p {
+      margin-top: 4px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 400;
+    }
+
+    /* ===== VALOR ===== */
+    .payment-amount-box {
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-border);
+      border-radius: 14px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background .25s ease, border-color .25s ease;
+    }
+    .payment-amount-box span {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+    .payment-amount-box strong {
+      color: var(--accent-text);
+      font-size: 1.2rem;
+      font-weight: 700;
+      transition: color .25s ease;
+    }
+
+    /* ===== RECEBEDOR ===== */
+    .pix-receiver-box {
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-border);
+      border-radius: 14px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--accent-text);
+      transition: background .25s ease, border-color .25s ease, color .25s ease;
+    }
+    .pix-receiver-box strong {
+      color: var(--accent-text);
+      font-weight: 600;
+    }
+
+    /* ===== QR CODE ===== */
+    .payment-qr-area { display: flex; flex-direction: column; align-items: center; }
+    .payment-qr-wrapper {
+      width: 180px;
+      height: 180px;
+      border: 1px solid #E5EAF2;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      margin-bottom: 12px;
+      background: #FFFFFF;
+    }
+    #qrcode {
+      width: 150px;
+      min-height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    #qrcode img {
+      width: 150px !important;
+      height: 150px !important;
+    }
+
+    .pix-code-label {
+      width: 100%;
+      text-align: center;
+      color: var(--accent-text);
+      font-size: 11px;
+      font-weight: 500;
+      margin: 2px 0 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: color .25s ease;
+    }
+    .pix-code-box {
+      width: 100%;
+      min-height: 48px;
+      max-height: 80px;
+      overflow: auto;
+      background: #F8FAFC;
+      border: 1px solid #E5EAF2;
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: #334155;
+      font-size: 12px;
+      line-height: 1.5;
+      word-break: break-all;
+      font-weight: 400;
+    }
+
+    /* ===== BOTÃO COPIAR ===== */
+    .btn-primary {
+      width: 100%;
+      height: 48px;
+      margin-top: 14px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, var(--accent-btn-from), var(--accent-btn-to));
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 6px 16px var(--accent-btn-shadow);
+      transition: all 0.2s ease;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(180deg, var(--accent-btn-to), var(--accent-btn-hover));
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px var(--accent-btn-shadow);
+    }
+    .btn-primary:disabled { opacity: 0.5; pointer-events: none; }
+
+    .ssl-seal {
+      text-align: center;
+      margin-top: 8px;
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .ssl-seal .lock-icon { font-size: 12px; }
+
+    .payment-qr-area p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      font-weight: 400;
+    }
+
+    /* ===== MENSAGEM DE PROCESSAMENTO ===== */
+    .payment-processing-note {
+      margin-top: 14px;
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      color: var(--accent-text);
+      font-size: 13px;
+      font-weight: 400;
+      text-align: center;
+      line-height: 1.6;
+      transition: background .25s ease, border-color .25s ease, color .25s ease;
+    }
+    .payment-processing-note .sub {
+      font-weight: 300;
+      font-size: 12px;
+      margin-top: 4px;
+      color: var(--accent-text);
+    }
+
+    /* ===== DIÁLOGO DE STATUS (ÚNICO) ===== */
+    .status-dialog {
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: 14px;
+      text-align: center;
+      font-weight: 500;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      display: none;
+      border: 2px solid transparent;
+    }
+    .status-dialog.visible { display: block; }
+
+    .status-dialog.success {
+      background: var(--accent-soft) !important;
+      border-color: var(--accent-border) !important;
+      color: var(--accent-text) !important;
+    }
+    .status-dialog.pending {
+      background: #FEF3C7 !important;
+      border-color: #FCD34D !important;
+      color: #92400E !important;
+    }
+    .status-dialog.checking {
+      background: var(--accent-soft) !important;
+      border-color: var(--accent-border) !important;
+      color: var(--accent-text) !important;
+    }
+    .status-dialog.error {
+      background: #FEF2F2 !important;
+      border-color: #FCA5A5 !important;
+      color: #991B1B !important;
+    }
+    .status-dialog .status-icon {
+      font-size: 18px;
+      margin-right: 8px;
+    }
+    .status-dialog .timer-text {
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
+    /* ===== BOTÃO VERIFICAR ===== */
+    .btn-check-status {
+      width: 100%;
+      height: 40px;
+      margin-top: 10px;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      color: var(--accent-text);
+      font-weight: 500;
+      font-size: 12px;
+      transition: all 0.2s ease;
+      border: 1px solid var(--accent-border);
+    }
+    .btn-check-status:hover { filter: brightness(.95); }
+    .btn-check-status:disabled { opacity: 0.5; pointer-events: none; }
+
+    /* ===== SUPORTE ===== */
+    .support-block {
+      margin-top: 20px;
+      padding: 12px 14px;
+      background: #F8FAFC;
+      border: 1px solid #E5EAF2;
+      border-radius: 14px;
+      text-align: center;
+    }
+    .support-block p {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .support-block a {
+      color: var(--accent-text);
+      font-weight: 500;
+      text-decoration: underline;
+      transition: color .25s ease;
+    }
+
+    /* =============================================
+       FOOTER
+       ============================================= */
+    .site-footer-pro {
+      background: #FFFFFF;
+      border-top: 1px solid rgba(226,232,240,.5);
+      padding: 16px 18px 12px;
+      margin-top: 12px;
+    }
+    .site-footer-pro-inner {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 8px;
+    }
+    .footer-pro-brand { align-items: center; text-align: center; }
+    .footer-pro-brand p {
+      max-width: 560px;
+      margin: 0 auto;
+      color: #94A3B8;
+      font-size: 11px;
+      line-height: 1.5;
+      font-weight: 400;
+    }
+    .footer-company {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .footer-company strong {
+      color: var(--primary);
+      font-weight: 600;
+      transition: color .25s ease;
+    }
+    .footer-company .cnpj {
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+    .footer-pro-col { display: none; }
+    .site-footer-pro-bottom {
+      margin-top: 8px;
+      color: #A8B3C7;
+      font-size: 10px;
+      font-weight: 400;
+      text-align: center;
+    }
+
+    /* ===== LOADER ===== */
+    .global-loader {
+      position: fixed; inset: 0;
+      display: none;
+      align-items: center; justify-content: center;
+      background: rgba(15,23,42,.25);
+      z-index: 2000;
+      padding: 20px;
+    }
+    .global-loader.active { display: flex; }
+    .global-loader-card {
+      width: min(300px, 90vw);
+      background: #fff;
+      border-radius: 18px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    .global-loader-spinner {
+      width: 28px; height: 28px;
+      border: 2.5px solid #E2E8F0;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      display: block;
+      margin: 0 auto 12px;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .global-loader-card strong {
+      display: block;
+      color: var(--primary);
+      font-weight: 600;
+      margin-bottom: 2px;
+      font-size: 15px;
+    }
+    .global-loader-card small {
+      color: var(--text-muted);
+      font-weight: 400;
+      font-size: 12px;
+    }
+
+    /* =============================================
+       RESPONSIVIDADE
+       ============================================= */
+    @media(max-width: 760px) {
+      .payment-main-shell { padding: 16px 12px 6px; }
+      .payment-flow-container { max-width: 100%; }
+      .payment-title-block h1 { font-size: 1.2rem; }
+      .payment-qr-wrapper { width: 160px; height: 160px; }
+      #qrcode, #qrcode img { width: 130px !important; height: 130px !important; }
+      .progress-item small { font-size: 8px; }
+      .order-summary-box .row { font-size: 12px; }
+      .pix-receiver-box { font-size: 12px; }
+      .footer-company { font-size: 11px; }
+      .status-dialog { font-size: 13px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER - SEM LOGO -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo" aria-label="Recarga Fácil">
+        <span class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" fill="#126BFF"/></svg>
+        </span>
+        <span class="logo-text">
+          <strong>Recarga Fácil</strong>
+          <span>Online</span>
+        </span>
+      </a>
+    </div>
+  </header>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="payment-main-shell">
+    <section class="payment-flow-container">
+
+      <!-- Progresso -->
+      <div class="step-progress-wrap">
+        <div class="step-progress">
+          <div class="progress-item completed"><span>✓</span><small>Telefone</small></div>
+          <div class="progress-line completed"></div>
+          <div class="progress-item completed"><span>✓</span><small>Operadora</small></div>
+          <div class="progress-line completed"></div>
+          <div class="progress-item completed"><span>✓</span><small>Valores</small></div>
+          <div class="progress-line completed"></div>
+          <div class="progress-item active"><span>4</span><small>Pagamento</small></div>
+        </div>
+      </div>
+
+      <div class="payment-receipt-screen" id="qrScreen">
+
+        <!-- ID da solicitação -->
+        <div class="request-id-badge">
+          <strong id="requestIdDisplay">Solicitação: MV-00000000</strong>
+        </div>
+
+        <!-- RESUMO DO PEDIDO -->
+        <div class="order-summary-box" id="orderSummary">
+          <div class="row"><span class="label">📱 Número</span><span class="value" id="summaryPhone">—</span></div>
+          <div class="row"><span class="label">📶 Operadora</span><span class="value" id="summaryOperator">—</span></div>
+          <div class="row"><span class="label">💰 Recarga</span><span class="value" id="summaryValue">—</span></div>
+          <div class="row"><span class="label">🎁 Bônus</span><span class="value" id="summaryBonus">—</span></div>
+        </div>
+
+        <!-- Título -->
+        <div class="payment-title-block">
+          <span class="payment-kicker"><img src="assets/images/pix-logo.png" alt="PIX" class="payment-pix-icon"> Pagamento via PIX</span>
+          <h1>Finalize sua solicitação com PIX</h1>
+          <p>Pagamento seguro com confirmação automática após aprovação.</p>
+        </div>
+
+        <!-- Valor -->
+        <div class="payment-amount-box">
+          <span>Valor para pagamento</span>
+          <strong id="checkoutAmountQr">R$ 0,00</strong>
+        </div>
+
+        <!-- RECEBEDOR -->
+        <div class="pix-receiver-box" id="pixReceiverBox">
+          ✓ Recebedor: <strong id="pixReceiver">Carregando...</strong>
+        </div>
+
+        <!-- QR Code (centralizado) -->
+        <div class="payment-qr-area" id="qrArea">
+          <div class="payment-qr-wrapper" id="qrWrapper">
+            <div id="qrcode">Gerando QR Code...</div>
+          </div>
+          <div class="pix-code-label">Código PIX Copia e Cola</div>
+          <div class="pix-code-box" id="pixCode">Aguardando geração do PIX...</div>
+          <button class="btn-primary" id="copyPixBtn" type="button">Copiar código PIX</button>
+          <div class="ssl-seal"><span class="lock-icon">🔒</span> Site protegido por criptografia SSL</div>
+          <p>Após copiar, abra o app do seu banco e cole o código PIX.</p>
+        </div>
+
+        <!-- MENSAGEM DE PROCESSAMENTO -->
+        <div class="payment-processing-note">
+          <span>⚡ Após a confirmação do PIX, sua solicitação será processada automaticamente.</span><br>
+          <span class="lock">🔒 Ambiente seguro e pagamento protegido.</span>
+          <div class="sub">O pagamento é identificado em poucos minutos e a solicitação segue para processamento sem necessidade de envio de comprovante.</div>
+        </div>
+
+        <!-- ===== DIÁLOGO DE STATUS (ÚNICO) ===== -->
+        <div id="statusDialog" class="status-dialog">
+          <span class="status-icon" id="dialogIcon">✅</span>
+          <span id="dialogMessage">Código PIX gerado com sucesso</span>
+          <span class="timer-text" id="dialogTimer"></span>
+        </div>
+
+        <!-- Botão verificar manual -->
+        <button class="btn-check-status" id="btnCheckStatus" type="button">🔄 Verificar pagamento agora</button>
+
+        <!-- SUPORTE -->
+        <div class="support-block">
+          <p>❓ Precisa de ajuda?<br>Nossa equipe de atendimento está disponível para auxiliar durante sua solicitação.<br><a href="mailto:contato@recargatodahora.online">contato@recargatodahora.online</a></p>
+        </div>
+
+      </div> <!-- /payment-receipt-screen -->
+
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer-pro">
+    <div class="site-footer-pro-inner">
+      <div class="footer-pro-brand">
+        <p>Plataforma digital independente para consulta online. Não somos operadora de telefonia.<br>As marcas das operadoras são de propriedade de seus respectivos titulares.</p>
+        <div class="footer-company">
+          <strong>🏢 IT BYOU PLATAFORMA DE TECNOLOGIA LTDA</strong><br>
+          <span class="cnpj">CNPJ: 36.365.474/0001-84</span>
+        </div>
+      </div>
+    </div>
+    <div class="site-footer-pro-bottom">© 2026 Recarga Fácil. Todos os direitos reservados.</div>
+  </footer>
+
+  <!-- LOADER -->
+  <div class="global-loader" id="globalLoader" aria-hidden="true">
+    <div class="global-loader-card">
+      <span class="global-loader-spinner"></span>
+      <strong>Carregando...</strong>
+      <small>Preparando a próxima etapa</small>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       JAVASCRIPT
+       ============================================================ -->
+  <script>
+    (function() {
+      'use strict';
+
+      const POLL_INTERVAL = 5000;
+      const TRANSITION_DELAY = 3000;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const saved = JSON.parse(sessionStorage.getItem('recargaData') || '{}');
+
+      const telefone = urlParams.get('numero') || saved.phone || '';
+      const operadora = urlParams.get('operadora') || saved.operator || '';
+      const valorRaw = urlParams.get('valor') || saved.value || '';
+      const gigasRaw = urlParams.get('gigas') || saved.internet || '';
+      const validade = urlParams.get('validade') || saved.validity || '';
+
+      if (!telefone || !operadora || !valorRaw) {
+        window.location.replace('app.html');
+        return;
+      }
+
+      document.getElementById('summaryPhone').textContent = telefone;
+      document.getElementById('summaryOperator').textContent = operadora;
+      document.getElementById('summaryValue').textContent = valorRaw;
+      document.getElementById('summaryBonus').textContent = gigasRaw || '—';
+
+      // ============================================================
+      // TEMA POR OPERADORA
+      // ============================================================
+      const THEMES = {
+        'vivo': {
+          primary: '#660099',
+          accent: '#9B00D6',
+          accentDark: '#4A006E',
+          accentSoft: '#F5E6FF',
+          accentBorder: '#D4B0EA',
+          accentText: '#660099',
+          btnFrom: '#A830E8',
+          btnTo: '#7A00BD',
+          btnHover: '#660099',
+          btnShadow: 'rgba(131,0,204,.28)'
+        },
+        'claro': {
+          primary: '#A10D19',
+          accent: '#E30613',
+          accentDark: '#7A0B15',
+          accentSoft: '#FFEAEC',
+          accentBorder: '#F0B0B5',
+          accentText: '#A10D19',
+          btnFrom: '#F02A35',
+          btnTo: '#C8000E',
+          btnHover: '#A10D19',
+          btnShadow: 'rgba(227,6,19,.28)'
+        },
+        'tim': {
+          primary: '#002D72',
+          accent: '#0066CC',
+          accentDark: '#001F54',
+          accentSoft: '#EAF3FC',
+          accentBorder: '#A5C4E4',
+          accentText: '#002D72',
+          btnFrom: '#0A6FD5',
+          btnTo: '#003A80',
+          btnHover: '#002D72',
+          btnShadow: 'rgba(0,58,128,.28)'
+        },
+        'surf telecom': {
+          primary: '#0E4D2E',
+          accent: '#2EAF4A',
+          accentDark: '#0A3B23',
+          accentSoft: '#E6F7EB',
+          accentBorder: '#A8D4B6',
+          accentText: '#0E4D2E',
+          btnFrom: '#4CD964',
+          btnTo: '#2EAF4A',
+          btnHover: '#0E4D2E',
+          btnShadow: 'rgba(46,175,74,.28)'
+        },
+        'correios': {
+          primary: '#003087',
+          accent: '#0055C4',
+          accentDark: '#001F5C',
+          accentSoft: '#E8F0FC',
+          accentBorder: '#B4CCEF',
+          accentText: '#003087',
+          btnFrom: '#FFE14D',
+          btnTo: '#FFD400',
+          btnHover: '#E5BB00',
+          btnShadow: 'rgba(255,200,0,.35)',
+          btnText: '#003087'
+        },
+        'algar': {
+          primary: '#005A9C',
+          accent: '#F58220',
+          accentDark: '#00457A',
+          accentSoft: '#FFF2E8',
+          accentBorder: '#FCD2B0',
+          accentText: '#B33A0E',
+          btnFrom: '#F89B3C',
+          btnTo: '#F58220',
+          btnHover: '#E06D00',
+          btnShadow: 'rgba(245,130,32,.32)'
+        }
+      };
+
+      function applyTheme(theme) {
+        if (!theme) return;
+        const root = document.documentElement;
+        root.style.setProperty('--primary', theme.primary);
+        root.style.setProperty('--accent', theme.accent);
+        root.style.setProperty('--accent-dark', theme.accentDark);
+        root.style.setProperty('--accent-soft', theme.accentSoft);
+        root.style.setProperty('--accent-border', theme.accentBorder);
+        root.style.setProperty('--accent-text', theme.accentText);
+        root.style.setProperty('--accent-btn-from', theme.btnFrom);
+        root.style.setProperty('--accent-btn-to', theme.btnTo);
+        root.style.setProperty('--accent-btn-hover', theme.btnHover);
+        root.style.setProperty('--accent-btn-shadow', theme.btnShadow);
+
+        // Atualiza o ícone do logo (raio) com a cor da operadora
+        const logoSvgPath = document.querySelector('.logo-icon svg path');
+        if (logoSvgPath) logoSvgPath.setAttribute('fill', theme.accent);
+
+        // Correios: botão amarelo com texto azul
+        if (theme.btnText) {
+          const btnStyle = document.createElement('style');
+          btnStyle.id = 'theme-btn-text-override';
+          btnStyle.textContent = `.btn-primary { color: ${theme.btnText} !important; }`;
+          document.head.appendChild(btnStyle);
+        }
+      }
+
+      const opKey = (operadora || '').trim().toLowerCase();
+      const theme = THEMES[opKey];
+      if (theme) applyTheme(theme);
+
+      // ============================================================
+      // RESTO DA LÓGICA (inalterado)
+      // ============================================================
+      function generateRequestId() {
+        const prefix = 'MV';
+        const random = Math.floor(10000000 + Math.random() * 90000000);
+        return `${prefix}-${random}`;
+      }
+      const requestId = generateRequestId();
+      document.getElementById('requestIdDisplay').textContent = `Solicitação: ${requestId}`;
+
+      function parseMoney(value) {
+        if (typeof value === 'number') {
+          if (value > 100) return value / 100;
+          return value;
+        }
+        let cleaned = String(value || '0')
+          .replace('R$', '')
+          .replace(/\./g, '')
+          .replace(',', '.')
+          .replace(/\s/g, '')
+          .trim();
+        let result = parseFloat(cleaned) || 0;
+        if (result > 100) result = result / 100;
+        return result;
+      }
+
+      function formatCurrency(value) {
+        const num = parseMoney(value);
+        return num.toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+          minimumFractionDigits: 2
+        });
+      }
+
+      const valorExibido = formatCurrency(valorRaw);
+      document.getElementById('checkoutAmountQr').textContent = valorExibido;
+
+      console.log('Valor Raw:', valorRaw);
+      console.log('Valor Exibido:', valorExibido);
+      console.log('Valor Processado (parseMoney):', parseMoney(valorRaw));
+
+      function extractPixReceiver(pixCode) {
+        const match = pixCode.match(/59(\d{2})(.*?)60\d{2}/);
+        if (!match) return null;
+        let name = match[2];
+        name = name.replace(/[^\w\s\-\.&]/g, '').trim();
+        return name || null;
+      }
+
+      const qrcodeContainer = document.getElementById('qrcode');
+      const pixCodeElement = document.getElementById('pixCode');
+      const copyPixBtn = document.getElementById('copyPixBtn');
+      const pixReceiverElement = document.getElementById('pixReceiver');
+      const btnCheckStatus = document.getElementById('btnCheckStatus');
+
+      const statusDialog = document.getElementById('statusDialog');
+      const dialogIcon = document.getElementById('dialogIcon');
+      const dialogMessage = document.getElementById('dialogMessage');
+      const dialogTimer = document.getElementById('dialogTimer');
+
+      let pixCodeValue = '';
+      let isExpired = false;
+      let timeLeft = 600;
+      let expirationInterval = null;
+      let isGeneratingPix = false;
+      let transactionId = null;
+      let pollingInterval = null;
+      let paymentConfirmed = false;
+      let currentStatusType = '';
+      let dialogTimeout = null;
+
+      // Obtém as cores atuais do tema (para uso no diálogo)
+      function getThemeColors() {
+        const cs = getComputedStyle(document.documentElement);
+        return {
+          soft: cs.getPropertyValue('--accent-soft').trim() || '#F1F5F9',
+          border: cs.getPropertyValue('--accent-border').trim() || '#CBD5E1',
+          text: cs.getPropertyValue('--accent-text').trim() || '#1E293B'
+        };
+      }
+
+      function showDialog(icon, message, type = '', showTimer = false) {
+        dialogIcon.textContent = icon;
+        dialogMessage.textContent = message;
+        dialogTimer.textContent = '';
+
+        statusDialog.className = 'status-dialog visible';
+        if (type) statusDialog.classList.add(type);
+
+        const tc = getThemeColors();
+        const styles = {
+          success: { background: tc.soft, borderColor: tc.border, color: tc.text },
+          pending: { background: '#FEF3C7', borderColor: '#FCD34D', color: '#92400E' },
+          checking: { background: tc.soft, borderColor: tc.border, color: tc.text },
+          error: { background: '#FEF2F2', borderColor: '#FCA5A5', color: '#991B1B' }
+        };
+        if (type && styles[type]) {
+          Object.assign(statusDialog.style, styles[type]);
+        } else {
+          statusDialog.style.background = '';
+          statusDialog.style.borderColor = '';
+          statusDialog.style.color = '';
+        }
+        statusDialog.style.display = 'block';
+
+        currentStatusType = type;
+
+        if (type === 'pending' && showTimer) {
+          updateDialogTimer();
+        } else {
+          dialogTimer.textContent = '';
+        }
+      }
+
+      function updateDialogTimer() {
+        if (currentStatusType === 'pending') {
+          const minutes = Math.floor(timeLeft / 60);
+          const seconds = timeLeft % 60;
+          dialogTimer.textContent = `(${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')})`;
+        } else {
+          dialogTimer.textContent = '';
+        }
+      }
+
+      function hideDialog() {
+        statusDialog.className = 'status-dialog';
+        statusDialog.style.display = 'none';
+        statusDialog.style.background = '';
+        statusDialog.style.borderColor = '';
+        statusDialog.style.color = '';
+        dialogTimer.textContent = '';
+        currentStatusType = '';
+      }
+
+      function showTemporaryDialog(icon, message, type, duration = 3000) {
+        const prevType = currentStatusType;
+        const prevMessage = dialogMessage.textContent;
+
+        showDialog(icon, message, type);
+
+        if (dialogTimeout) clearTimeout(dialogTimeout);
+        dialogTimeout = setTimeout(() => {
+          if (prevType === 'pending') {
+            showDialog('⏳', 'Aguardando pagamento...', 'pending', true);
+          } else if (prevType === 'success') {
+            showDialog('✅', 'Código PIX gerado com sucesso', 'success');
+          } else if (prevType === 'checking') {
+            showDialog('🔄', 'Verificando status do pagamento...', 'checking');
+          } else if (prevType === 'error') {
+            showDialog('❌', prevMessage, 'error');
+          } else {
+            hideDialog();
+          }
+          dialogTimeout = null;
+        }, duration);
+      }
+
+      async function checkTransactionStatus(txnId) {
+        if (!txnId) return null;
+        try {
+          const response = await fetch(`/api/status?transaction=${encodeURIComponent(txnId)}`);
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Erro ao consultar status');
+          }
+          return data.data;
+        } catch (error) {
+          console.error('Erro na consulta de status:', error);
+          return null;
+        }
+      }
+
+      function startPolling(txnId) {
+        if (pollingInterval) clearInterval(pollingInterval);
+        if (!txnId) return;
+        showDialog('⏳', 'Aguardando pagamento...', 'pending', true);
+
+        pollingInterval = setInterval(async () => {
+          if (paymentConfirmed) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+            return;
+          }
+          const statusData = await checkTransactionStatus(txnId);
+          if (!statusData) return;
+
+          const status = statusData.status;
+          if (status === 'PAID') {
+            paymentConfirmed = true;
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+            showDialog('✅', 'Pagamento confirmado! Sua recarga será processada em instantes.', 'success');
+            setTimeout(() => {
+              window.location.href = 'sucesso.html?transaction=' + txnId;
+            }, 3000);
+          } else if (status === 'CANCELLED' || status === 'REFUNDED' || status === 'EXPIRED') {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+            showDialog('❌', `Transação ${status.toLowerCase()}. Entre em contato com o suporte.`, 'error');
+          }
+        }, POLL_INTERVAL);
+      }
+
+      btnCheckStatus.addEventListener('click', async () => {
+        if (!transactionId) {
+          showTemporaryDialog('⚠️', 'ID da transação não disponível.', 'error', 4000);
+          return;
+        }
+
+        btnCheckStatus.disabled = true;
+        btnCheckStatus.textContent = 'Verificando...';
+        showDialog('🔄', 'Verificando status do pagamento...', 'checking');
+
+        const statusData = await checkTransactionStatus(transactionId);
+
+        btnCheckStatus.disabled = false;
+        btnCheckStatus.textContent = '🔄 Verificar pagamento agora';
+
+        if (!statusData) {
+          showDialog('⚠️', 'Não foi possível verificar o status. Tente novamente.', 'error');
+          return;
+        }
+
+        const status = statusData.status;
+        if (status === 'PAID') {
+          paymentConfirmed = true;
+          if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; }
+          showDialog('✅', 'Pagamento confirmado! Sua recarga será processada em instantes.', 'success');
+          setTimeout(() => {
+            window.location.href = 'sucesso.html?transaction=' + transactionId;
+          }, 3000);
+        } else if (status === 'CANCELLED' || status === 'REFUNDED' || status === 'EXPIRED') {
+          showDialog('❌', `Transação ${status.toLowerCase()}. Entre em contato com o suporte.`, 'error');
+        } else {
+          showDialog('⏳', 'Aguardando pagamento...', 'pending', true);
+        }
+      });
+
+      function generateQRCode(text, container) {
+        try {
+          container.innerHTML = '';
+          let qrSize = window.innerWidth <= 480 ? 130 : 150;
+          new QRCode(container, {
+            text: text,
+            width: qrSize,
+            height: qrSize,
+            colorDark: '#0f172a',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+          return true;
+        } catch (error) {
+          container.innerHTML = '<div class="qr-fallback">QR Code indisponível<br>Use o código copiável</div>';
+          return false;
+        }
+      }
+
+      function stopExpirationTimer() {
+        if (expirationInterval) { clearInterval(expirationInterval); expirationInterval = null; }
+      }
+
+      function updateTimerDisplay() {
+        if (currentStatusType === 'pending') {
+          updateDialogTimer();
+        }
+      }
+
+      function handleExpiration() {
+        if (isExpired) return;
+        isExpired = true;
+        stopExpirationTimer();
+        copyPixBtn.disabled = true;
+        copyPixBtn.textContent = 'Código expirado';
+        qrcodeContainer.innerHTML = '<div class="qr-expired">⏰<br>Expirado<br><small>Refaça a solicitação</small></div>';
+        pixCodeElement.textContent = 'Código expirado. Refaça a solicitação.';
+        pixCodeValue = '';
+        pixReceiverElement.textContent = '—';
+        if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; }
+        showDialog('⏰', 'Código expirado. Refaça a solicitação.', 'error');
+      }
+
+      function startExpirationTimer() {
+        stopExpirationTimer();
+        isExpired = false;
+        timeLeft = 600;
+        updateTimerDisplay();
+        expirationInterval = setInterval(() => {
+          if (timeLeft <= 1) {
+            handleExpiration();
+          } else {
+            timeLeft--;
+            updateTimerDisplay();
+          }
+        }, 1000);
+      }
+
+      async function gerarPix(forceNew = false) {
+        if (isGeneratingPix) return;
+        if (pixCodeValue && !forceNew) return;
+        isGeneratingPix = true;
+
+        try {
+          isExpired = false;
+          stopExpirationTimer();
+          if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; }
+          hideDialog();
+          copyPixBtn.disabled = true;
+          copyPixBtn.textContent = 'Preparando código...';
+          pixCodeElement.textContent = 'Gerando código PIX...';
+          qrcodeContainer.innerHTML = '<div class="qr-loading">Preparando código de pagamento...</div>';
+          pixReceiverElement.textContent = 'Carregando...';
+
+          const amountValue = parseMoney(valorRaw);
+
+          console.log('📊 Valor original:', valorRaw);
+          console.log('📊 Valor processado (parseMoney):', amountValue);
+
+          if (amountValue < 1) throw new Error('Valor inválido: ' + amountValue);
+
+          const product_name = `Recarga Recarga Fácil - ${operadora} - ${gigasRaw || 'créditos'}`;
+          const clienteBlackcat = {
+            name: 'Recarga Fácil Cliente',
+            email: 'cliente@recargatodahora.online',
+            cpf: '00000000000',
+            phone: String(telefone).replace(/\D/g, '')
+          };
+
+          const requestData = {
+            amount: amountValue,
+            product_name: product_name,
+            customer: clienteBlackcat,
+            client: clienteBlackcat,
+            metadata: {
+              telefone: String(telefone).replace(/\D/g, ''),
+              operadora: operadora,
+              gigas: gigasRaw || 'creditos',
+              validade: validade,
+              origem: 'Recarga Fácil'
+            }
+          };
+
+          console.log('📤 Enviando para API:', JSON.stringify(requestData, null, 2));
+
+          const response = await fetch('/api/pix', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+          });
+
+          const responseText = await response.text();
+          console.log('📥 Resposta da API:', responseText);
+
+          let data;
+          try {
+            data = JSON.parse(responseText);
+          } catch (e) {
+            throw new Error('Resposta inválida do servidor: ' + responseText.substring(0, 200));
+          }
+
+          if (!response.ok || !data.success) throw new Error(data.message || `Erro HTTP ${response.status}`);
+
+          const pixCode = data.data?.paymentData?.copyPaste || data.data?.paymentData?.qrCode;
+          const qrBase64 = data.data?.paymentData?.qrCodeBase64;
+          if (!pixCode) throw new Error('Código PIX não retornado');
+
+          transactionId = data.data?.transactionId || null;
+          if (!transactionId) {
+            console.warn('transactionId não retornado pela API. O polling não funcionará.');
+          }
+
+          pixCodeValue = pixCode;
+          pixCodeElement.textContent = pixCodeValue;
+
+          const receiver = extractPixReceiver(pixCodeValue);
+          pixReceiverElement.textContent = receiver || 'Informação não disponível';
+
+          if (qrBase64 && qrBase64.startsWith('data:image')) {
+            qrcodeContainer.innerHTML = `<img src="${qrBase64}" alt="QR Code PIX">`;
+          } else {
+            generateQRCode(pixCodeValue, qrcodeContainer);
+          }
+
+          copyPixBtn.disabled = false;
+          copyPixBtn.textContent = 'Copiar código PIX';
+          startExpirationTimer();
+
+          showDialog('✅', 'Código PIX gerado com sucesso', 'success');
+
+          const qrArea = document.getElementById('qrArea');
+          if (qrArea) {
+            setTimeout(() => {
+              qrArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 200);
+          }
+
+          if (transactionId) {
+            setTimeout(() => {
+              startPolling(transactionId);
+            }, TRANSITION_DELAY);
+          }
+
+        } catch (error) {
+          console.error('❌ Erro ao gerar PIX:', error);
+          pixCodeValue = '';
+          pixCodeElement.textContent = 'Erro ao gerar PIX. Refaça a solicitação.';
+          qrcodeContainer.innerHTML = '<div class="qr-fallback">Erro ao gerar código</div>';
+          pixReceiverElement.textContent = '—';
+          copyPixBtn.disabled = true;
+          copyPixBtn.textContent = 'Erro';
+          isExpired = true;
+          stopExpirationTimer();
+          showDialog('❌', 'Erro ao gerar PIX. Refaça a solicitação.', 'error');
+        } finally {
+          isGeneratingPix = false;
+        }
+      }
+
+      copyPixBtn.addEventListener('click', () => {
+        if (isExpired || !pixCodeValue) {
+          showTemporaryDialog('⚠️', 'PIX indisponível ou expirado.', 'error', 3000);
+          return;
+        }
+        copyPixBtn.classList.add('is-loading');
+        copyPixBtn.disabled = true;
+        navigator.clipboard.writeText(pixCodeValue)
+          .then(() => {
+            const originalText = copyPixBtn.textContent;
+            copyPixBtn.textContent = 'Código copiado';
+            copyPixBtn.classList.remove('is-loading');
+            copyPixBtn.disabled = false;
+            setTimeout(() => { copyPixBtn.textContent = originalText; }, 3000);
+            showTemporaryDialog('✅', 'Código copiado! Abra o app do banco e cole para pagar.', 'success', 3000);
+          })
+          .catch(() => {
+            copyPixBtn.classList.remove('is-loading');
+            copyPixBtn.disabled = false;
+            showTemporaryDialog('⚠️', 'Falha ao copiar. Tente manualmente.', 'error', 3000);
+          });
+      });
+
+      document.addEventListener('DOMContentLoaded', () => {
+        if (telefone && operadora && parseMoney(valorRaw) > 0) {
+          gerarPix(false);
+        } else {
+          window.location.replace('app.html');
+        }
+      });
+
+      (function siteLoadingOverlayInit() {
+        const loader = document.getElementById('globalLoader');
+        function showLoader(text) {
+          if (!loader) return;
+          const strong = loader.querySelector('strong');
+          if (strong && text) strong.textContent = text;
+          loader.classList.add('active');
+        }
+        window.showSiteLoader = showLoader;
+        document.addEventListener('click', function(e) {
+          const nav = e.target.closest('a[href]');
+          if (nav) {
+            const href = nav.getAttribute('href') || '';
+            if (href && !href.startsWith('#') && !href.startsWith('mailto:') && !href.startsWith('tel:') && nav.target !== '_blank') {
+              showLoader('Carregando...');
+            }
+          }
+        }, true);
+      })();
+
+    })();
+  </script>
+</body>
+</html>

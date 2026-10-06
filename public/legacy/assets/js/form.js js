@@ -1,0 +1,177 @@
+'use strict';
+
+const baseOptions = [
+  { id:'p20',  title:'R$ 20',  value:'R$ 20,00',  internet:'+4GB',  validity:'30 dias', bonus:'4GB'  },
+  { id:'p25',  title:'R$ 25',  value:'R$ 25,00',  internet:'+6GB',  validity:'30 dias', bonus:'6GB'  },
+  { id:'p30',  title:'R$ 30',  value:'R$ 30,00',  internet:'+8GB',  validity:'30 dias', bonus:'8GB', destaque:true },
+  { id:'p35',  title:'R$ 35',  value:'R$ 35,00',  internet:'+10GB', validity:'30 dias', bonus:'10GB' },
+  { id:'p40',  title:'R$ 40',  value:'R$ 40,00',  internet:'+14GB', validity:'30 dias', bonus:'14GB' },
+  { id:'p50',  title:'R$ 50',  value:'R$ 50,00',  internet:'+20GB', validity:'30 dias', bonus:'20GB' },
+  { id:'p60',  title:'R$ 60',  value:'R$ 60,00',  internet:'+25GB', validity:'30 dias', bonus:'25GB' },
+  { id:'p70',  title:'R$ 70',  value:'R$ 70,00',  internet:'+32GB', validity:'30 dias', bonus:'32GB' },
+  { id:'p100', title:'R$ 100', value:'R$ 100,00', internet:'+50GB', validity:'30 dias', bonus:'50GB' }
+];
+
+window.state = { phone:'', operator:'', selectedOption:null };
+
+function maskPhone(v){v=v.replace(/\D/g,'').substring(0,11);if(!v)return '';if(v.length<=2)return '('+v;if(v.length<=7)return '('+v.substring(0,2)+') '+v.substring(2);return '('+v.substring(0,2)+') '+v.substring(2,7)+'-'+v.substring(7,11);}
+function isValidPhone(p){const d=p.replace(/\D/g,'');return d.length>=10&&d.length<=11;}
+
+function setButtonLoading(btn,active=true){
+  if(!btn)return;
+  const label=btn.querySelector('.btn-label');
+  if(active){btn.classList.add('is-loading');btn.disabled=true;if(label)btn.dataset.originalLabel=label.textContent;}
+  else{btn.classList.remove('is-loading');btn.disabled=false;if(label&&btn.dataset.originalLabel)label.textContent=btn.dataset.originalLabel;}
+}
+function runWithLoading(btn,cb,delay=320){setButtonLoading(btn,true);setTimeout(()=>{try{cb();}finally{setButtonLoading(btn,false);}},delay);}
+function showGlobalLoader(text='Carregando...'){
+  const l=document.getElementById('globalLoader');if(!l)return;
+  const s=l.querySelector('strong');if(s)s.textContent=text;
+  l.classList.add('active');l.setAttribute('aria-hidden','false');
+}
+
+/* RENDER DOS VALORES */
+function renderOptions(){
+  const grid=document.getElementById('optionsGrid');if(!grid)return;
+  grid.innerHTML=baseOptions.map(o=>`
+    <button type="button" class="value-card ${o.destaque?'featured':''}" id="opt-${o.id}" data-option-id="${o.id}" aria-label="Selecionar ${o.title} com ${o.internet} de bônus">
+      ${o.destaque?'<span class="value-featured-tag">Mais escolhido</span>':''}
+      <span class="value-price">${o.title}</span>
+      <span class="value-bonus">${o.internet}</span>
+      <span class="value-validity">${o.validity}</span>
+    </button>`).join('');
+  grid.querySelectorAll('.value-card').forEach(c=>c.addEventListener('click',()=>selectOption(c.dataset.optionId)));
+  const featured=baseOptions.find(o=>o.destaque)||baseOptions[0];
+  if(featured)selectOption(featured.id,true);
+}
+
+function selectOption(id,skipFocus){
+  const o=baseOptions.find(x=>x.id===id);if(!o)return;
+  state.selectedOption=o;
+  document.querySelectorAll('.value-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('opt-'+id)?.classList.add('selected');
+  updateReviewButton();
+  if(!skipFocus)focusOnReviewButton();
+}
+
+function focusOnReviewButton(){
+  const btn=document.getElementById('btnReviewForm');if(!btn)return;
+  const phone=document.getElementById('phoneInput')?.value.trim()||'';
+  if(!isValidPhone(phone)||!state.operator||!state.selectedOption)return;
+  setTimeout(()=>{btn.scrollIntoView({behavior:'smooth',block:'center'});},400);
+}
+
+function updateReviewButton(){
+  const lbl=document.getElementById('btnReviewLabel');if(!lbl)return;
+  const phone=document.getElementById('phoneInput')?.value.trim()||'';
+  const ok=isValidPhone(phone)&&!!state.operator&&!!state.selectedOption;
+  lbl.textContent=ok?'Fazer minha recarga':'Revisar recarga';
+}
+
+/* OPERADORA */
+function bindOperatorCards(){
+  document.querySelectorAll('.operator-card').forEach(card=>{
+    card.addEventListener('click',()=>{
+      document.querySelectorAll('.operator-card').forEach(c=>{c.classList.remove('selected');c.setAttribute('aria-pressed','false');});
+      card.classList.add('selected');card.setAttribute('aria-pressed','true');
+      state.operator=card.dataset.operator;
+      document.getElementById('operatorError')?.classList.remove('visible');
+      updateReviewButton();
+    });
+  });
+}
+
+/* VALIDAÇÃO E RESUMO */
+function validateFormAndContinue(){
+  const phoneEl=document.getElementById('phoneInput');
+  const phone=phoneEl?.value.trim()||'';
+  let firstInvalid=null;
+
+  if(!isValidPhone(phone)){phoneEl?.classList.add('error');document.getElementById('phoneError')?.classList.add('visible');firstInvalid=phoneEl;}
+  else{state.phone=phone;document.getElementById('phoneError')?.classList.remove('visible');}
+
+  if(!state.operator){document.getElementById('operatorError')?.classList.add('visible');if(!firstInvalid)firstInvalid=document.getElementById('operatorsGrid');}
+  else{document.getElementById('operatorError')?.classList.remove('visible');}
+
+  if(!state.selectedOption){document.getElementById('optionError')?.classList.add('visible');if(!firstInvalid)firstInvalid=document.getElementById('optionsGrid');}
+  else{document.getElementById('optionError')?.classList.remove('visible');}
+
+  if(firstInvalid){firstInvalid.scrollIntoView({behavior:'smooth',block:'center'});return false;}
+  goToSummary();return true;
+}
+
+function goToSummary(){
+  const o=state.selectedOption;if(!o)return;
+  // Número NÃO vai pela URL — só sessionStorage
+  sessionStorage.setItem('recargaData',JSON.stringify({
+    phone:state.phone,operator:state.operator,
+    internet:o.internet+' de internet',validity:o.validity,value:o.value
+  }));
+  document.getElementById('summaryPhone').textContent=state.phone;
+  document.getElementById('summaryOperator').textContent=state.operator;
+  document.getElementById('summaryInternet').textContent=o.internet+' de internet';
+  document.getElementById('summaryValidity').textContent=o.validity;
+  document.getElementById('summaryValue').textContent=o.value;
+  document.getElementById('stepForm')?.classList.remove('active');
+  document.getElementById('stepSummary')?.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function backToForm(){
+  document.getElementById('stepSummary')?.classList.remove('active');
+  document.getElementById('stepForm')?.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* REDIRECIONAR PARA PAGAMENTO (número NÃO vai pela URL) */
+function goToPayment(){
+  const o=state.selectedOption||{};
+  sessionStorage.setItem('recargaPayment',JSON.stringify({
+    phone:state.phone,operator:state.operator,
+    value:o.value||'',gigas:o.internet||'',validade:o.validity||''
+  }));
+  // Fallback via sessionStorage — pagamento.html lê o número de lá, não da URL
+  const params=new URLSearchParams({
+    operadora:state.operator||'',valor:o.value||'',gigas:o.internet||'',validade:o.validity||''
+  });
+  window.location.href='pagamento.html?'+params.toString();
+}
+
+/* FAQ */
+function bindFaq(){
+  document.querySelectorAll('.faq-question').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const item=btn.closest('.faq-item');
+      const open=item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(o=>{if(o!==item){o.classList.remove('open');o.querySelector('.faq-question')?.setAttribute('aria-expanded','false');}});
+      item.classList.toggle('open',!open);
+      btn.setAttribute('aria-expanded',String(!open));
+    });
+  });
+}
+
+/* BOOT */
+document.addEventListener('DOMContentLoaded',()=>{
+  renderOptions();
+  bindOperatorCards();
+  bindFaq();
+  updateReviewButton();
+
+  document.getElementById('btnReviewForm')?.addEventListener('click',function(){runWithLoading(this,validateFormAndContinue,320);});
+  document.getElementById('btnBackSummary')?.addEventListener('click',backToForm);
+  document.getElementById('btnFinalizar')?.addEventListener('click',function(){runWithLoading(this,goToPayment,320);});
+
+  document.getElementById('phoneInput')?.addEventListener('input',function(){
+    this.value=maskPhone(this.value);
+    this.setSelectionRange(this.value.length,this.value.length);
+    this.classList.remove('error');
+    document.getElementById('phoneError')?.classList.remove('visible');
+    updateReviewButton();
+  });
+
+  document.addEventListener('click',e=>{
+    const nav=e.target.closest('a[href]');if(!nav)return;
+    const href=nav.getAttribute('href')||'';
+    if(href&&!href.startsWith('#')&&!href.startsWith('mailto:')&&!href.startsWith('tel:')&&nav.target!=='_blank')showGlobalLoader('Carregando...');
+  },true);
+});
